@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analyzer Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        
+        .search-section {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .search-input {
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: #fff;
+            width: 300px;
+            text-transform: uppercase;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .analyze-btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #333;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .results.active {
+            display: block;
+        }
+        
+        .score-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .score-card {
+            background: linear-gradient(145deg, #1e1e30, #252540);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #333;
+        }
+        
+        .score-card.main {
+            grid-column: span 2;
+            text-align: center;
+            background: linear-gradient(145deg, #1a2a3a, #1e3a4a);
+        }
+        
+        .score-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        
+        .score-value {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .score-value.positive { color: #00ff88; }
+        .score-value.negative { color: #ff4757; }
+        .score-value.neutral { color: #ffa502; }
+        
+        .recommendation {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .recommendation.buy { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .recommendation.sell { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
+        .recommendation.hold { background: rgba(255, 165, 2, 0.2); color: #ffa502; }
+        
+        .weight-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .weight-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: linear-gradient(145deg, #1e1e30, #252540);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+        
+        .chart-container.full-width {
+            grid-column: span 2;
+        }
+        
+        .chart-container h3 {
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+        
+        .signals-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .signals-card {
+            background: linear-gradient(145deg, #1e1e30, #252540);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #333;
+        }
+        
+        .signals-card h3 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .signals-card.bullish h3 { color: #00ff88; }
+        .signals-card.bearish h3 { color: #ff4757; }
+        
+        .signal-item {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            border-left: 3px solid;
+        }
+        
+        .signal-item.bullish { border-color: #00ff88; }
+        .signal-item.bearish { border-color: #ff4757; }
+        
+        .news-section {
+            background: linear-gradient(145deg, #1e1e30, #252540);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        .news-section h3 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .news-item {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 3px solid #333;
+        }
+        
+        .news-item.positive { border-color: #00ff88; }
+        .news-item.negative { border-color: #ff4757; }
+        .news-item.neutral { border-color: #ffa502; }
+        
+        .news-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .news-meta {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(145deg, #1e1e30, #252540);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .company-header {
+            background: linear-gradient(145deg, #1e1e30, #252540);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #333;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .company-info h2 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .company-info .ticker {
+            color: #00d4ff;
+            font-size: 1.2rem;
+        }
+        
+        .company-info .sector {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .price-info {
+            text-align: right;
+        }
+        
+        .current-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .error-message {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid #ff4757;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #ff4757;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid, .signals-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container.full-width {
+                grid-column: span 1;
+            }
+            
+            .score-card.main {
+                grid-column: span 1;
+            }
+            
+            .company-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .price-info {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 Stock Analyzer</h1>
+            <p>Technical • Sentiment • Fundamental Analysis</p>
+        </header>
+        
+        <div class="search-section">
+            <input type="text" class="search-input" id="tickerInput" placeholder="Enter ticker (e.g., AAPL)" value="AAPL">
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeStock()">Analyze</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing stock data...</p>
+            <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">This may take 15-30 seconds</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage" style="display: none;"></div>
+        
+        <div class="results" id="results">
+            <!-- Company Header -->
+            <div class="company-header" id="companyHeader">
+                <div class="company-info">
+                    <h2 id="companyName">Apple Inc.</h2>
+                    <span class="ticker" id="tickerSymbol">AAPL</span>
+                    <span class="sector" id="companySector">Technology</span>
+                </div>
+                <div class="price-info">
+                    <div class="current-price" id="currentPrice">$0.00</div>
+                </div>
+            </div>
+            
+            <!-- Score Cards -->
+            <div class="score-cards">
+                <div class="score-card main">
+                    <h3>Composite Score</h3>
+                    <div class="score-value" id="compositeScore">0.00</div>
+                    <div class="recommendation" id="recommendation">HOLD</div>
+                    <p style="margin-top: 15px; color: #888;">Confidence: <span id="confidence">MEDIUM</span></p>
+                </div>
+                
+                <div class="score-card">
+                    <h3>Technical Analysis (40%)</h3>
+                    <div class="score-value" id="technicalScore">0.00</div>
+                    <div class="recommendation" id="technicalRec">NEUTRAL</div>
+                    <div class="weight-bar">
+                        <div class="weight-fill" id="technicalBar" style="width: 50%; background: #00d4ff;"></div>
+                    </div>
+                </div>
+                
+                <div class="score-card">
+                    <h3>Sentiment Analysis (40%)</h3>
+                    <div class="score-value" id="sentimentScore">0.00</div>
+                    <div class="recommendation" id="sentimentRec">NEUTRAL</div>
+                    <div class="weight-bar">
+                        <div class="weight-fill" id="sentimentBar" style="width: 50%; background: #7b2cbf;"></div>
+                    </div>
+                </div>
+                
+                <div class="score-card">
+                    <h3>Fundamental Analysis (20%)</h3>
+                    <div class="score-value" id="fundamentalScore">0.00</div>
+                    <div class="recommendation" id="fundamentalRec">NEUTRAL</div>
+                    <div class="weight-bar">
+                        <div class="weight-fill" id="fundamentalBar" style="width: 50%; background: #ffa502;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-container full-width">
+                    <h3>📊 Price Chart with Indicators</h3>
+                    <div id="priceChart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>📈 RSI Indicator</h3>
+                    <div id="rsiChart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>📉 MACD Indicator</h3>
+                    <div id="macdChart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>🎯 Score Breakdown</h3>
+                    <div id="scoreChart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>📰 Sentiment Distribution</h3>
+                    <div id="sentimentChart"></div>
+                </div>
+            </div>
+            
+            <!-- Key Metrics -->
+            <h3 style="margin-bottom: 15px; color: #fff;">📋 Key Metrics</h3>
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Signals -->
+            <div class="signals-section">
+                <div class="signals-card bullish">
+                    <h3>✅ Bullish Signals</h3>
+                    <div id="bullishSignals"></div>
+                </div>
+                
+                <div class="signals-card bearish">
+                    <h3>❌ Bearish Signals</h3>
+                    <div id="bearishSignals"></div>
+                </div>
+            </div>
+            
+            <!-- News Section -->
+            <div class="news-section">
+                <h3>📰 Recent News & Sentiment</h3>
+                <div id="newsContainer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let analysisData = null;
+        
+        // Handle Enter key
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeStock();
+            }
+        });
+        
+        async function analyzeStock() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            if (!ticker) return;
+            
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    analysisData = result.data;
+                    displayResults(analysisData);
+                } else {
+                    showError(result.error || 'Analysis failed');
+                }
+            } catch (error) {
+                showError('Failed to connect to server: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+        
+        function displayResults(data) {
+            document.getElementById('results').classList.add('active');
+            
+            // Company info
+            const fundamental = data.fundamental || {};
+            const companyInfo = fundamental.company_info || {};
+            document.getElementById('companyName').textContent = companyInfo.name || data.ticker;
+            document.getElementById('tickerSymbol').textContent = data.ticker;
+            document.getElementById('companySector').textContent = companyInfo.sector || 'N/A';
+            
+            // Current price
+            const technical = data.technical || {};
+            const chartData = technical.chart_data || {};
+            const prices = chartData.ohlc?.close || [];
+            const currentPrice = prices[prices.length - 1] || 0;
+            document.getElementById('currentPrice').textContent = '$' + currentPrice.toFixed(2);
+            
+            // Composite score
+            const composite = data.composite || {};
+            const compositeScore = composite.composite_score || 0;
+            const scoreEl = document.getElementById('compositeScore');
+            scoreEl.textContent = compositeScore.toFixed(3);
+            scoreEl.className = 'score-value ' + getScoreClass(compositeScore);
+            
+            const recEl = document.getElementById('recommendation');
+            recEl.textContent = composite.recommendation || 'HOLD';
+            recEl.className = 'recommendation ' + getRecClass(composite.recommendation);
+            
+            document.getElementById('confidence').textContent = composite.confidence || 'MEDIUM';
+            
+            // Component scores
+            const components = composite.component_scores || {};
+            
+            if (components.technical) {
+                updateScoreCard('technical', components.technical);
+            }
+            if (components.sentiment) {
+                updateScoreCard('sentiment', components.sentiment);
+            }
+            if (components.fundamental) {
+                updateScoreCard('fundamental', components.fundamental);
+            }
+            
+            // Charts
+            renderPriceChart(chartData);
+            renderRSIChart(chartData);
+            renderMACDChart(chartData);
+            renderScoreChart(components);
+            renderSentimentChart(data.sentiment);
+            
+            // Metrics
+            renderMetrics(data);
+            
+            // Signals
+            renderSignals(data.all_signals || {});
+            
+            // News
+            renderNews(data.sentiment?.news_sentiment?.articles || []);
+        }
+        
+        function updateScoreCard(type, data) {
+            const score = data.score || 0;
+            const scoreEl = document.getElementById(type + 'Score');
+            scoreEl.textContent = score.toFixed(3);
+            scoreEl.className = 'score-value ' + getScoreClass(score);
+            
+            const recEl = document.getElementById(type + 'Rec');
+            recEl.textContent = data.recommendation || 'NEUTRAL';
+            recEl.className = 'recommendation ' + getRecClass(data.recommendation);
+            
+            // Update bar
+            const barEl = document.getElementById(type + 'Bar');
+            const barWidth = ((score + 1) / 2) * 100;
+            barEl.style.width = barWidth + '%';
+            barEl.style.background = score > 0 ? '#00ff88' : (score < 0 ? '#ff4757' : '#ffa502');
+        }
+        
+        function getScoreClass(score) {
+            if (score > 0.1) return 'positive';
+            if (score < -0.1) return 'negative';
+            return 'neutral';
+        }
+        
+        function getRecClass(rec) {
+            if (!rec) return 'hold';
+            rec = rec.toUpperCase();
+            if (rec.includes('BUY') || rec === 'BULLISH') return 'buy';
+            if (rec.includes('SELL') || rec === 'BEARISH') return 'sell';
+            return 'hold';
+        }
+        
+        function renderPriceChart(chartData) {
+            const dates = chartData.dates || [];
+            const ohlc = chartData.ohlc || {};
+            
+            const traces = [
+                {
+                    type: 'candlestick',
+                    x: dates,
+                    open: ohlc.open,
+                    high: ohlc.high,
+                    low: ohlc.low,
+                    close: ohlc.close,
+                    name: 'Price',
+                    increasing: { line: { color: '#00ff88' } },
+                    decreasing: { line: { color: '#ff4757' } }
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: chartData.sma_20,
+                    name: 'SMA 20',
+                    line: { color: '#00d4ff', width: 1 }
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: chartData.sma_50,
+                    name: 'SMA 50',
+                    line: { color: '#ffa502', width: 1 }
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: chartData.bb_upper,
+                    name: 'BB Upper',
+                    line: { color: '#7b2cbf', width: 1, dash: 'dot' }
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: chartData.bb_lower,
+                    name: 'BB Lower',
+                    line: { color: '#7b2cbf', width: 1, dash: 'dot' }
+                }
+            ];
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#888' },
+                xaxis: { gridcolor: '#333', showgrid: true },
+                yaxis: { gridcolor: '#333', showgrid: true, title: 'Price ($)' },
+                legend: { orientation: 'h', y: -0.2 },
+                margin: { t: 20, b: 60, l: 60, r: 20 },
+                height: 400
+            };
+            
+            Plotly.newPlot('priceChart', traces, layout, { responsive: true });
+        }
+        
+        function renderRSIChart(chartData) {
+            const dates = chartData.dates || [];
+            const rsi = chartData.rsi || [];
+            
+            const traces = [
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: rsi,
+                    name: 'RSI',
+                    line: { color: '#00d4ff', width: 2 },
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(0, 212, 255, 0.1)'
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: Array(dates.length).fill(70),
+                    name: 'Overbought',
+                    line: { color: '#ff4757', width: 1, dash: 'dash' }
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: Array(dates.length).fill(30),
+                    name: 'Oversold',
+                    line: { color: '#00ff88', width: 1, dash: 'dash' }
+                }
+            ];
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#888' },
+                xaxis: { gridcolor: '#333', showgrid: true },
+                yaxis: { gridcolor: '#333', showgrid: true, range: [0, 100] },
+                showlegend: false,
+                margin: { t: 20, b: 40, l: 40, r: 20 },
+                height: 250
+            };
+            
+            Plotly.newPlot('rsiChart', traces, layout, { responsive: true });
+        }
+        
+        function renderMACDChart(chartData) {
+            const dates = chartData.dates || [];
+            
+            const traces = [
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: chartData.macd,
+                    name: 'MACD',
+                    line: { color: '#00d4ff', width: 2 }
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: dates,
+                    y: chartData.macd_signal,
+                    name: 'Signal',
+                    line: { color: '#ffa502', width: 2 }
+                },
+                {
+                    type: 'bar',
+                    x: dates,
+                    y: chartData.macd_histogram,
+                    name: 'Histogram',
+                    marker: {
+                        color: (chartData.macd_histogram || []).map(v => v >= 0 ? '#00ff88' : '#ff4757')
+                    }
+                }
+            ];
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#888' },
+                xaxis: { gridcolor: '#333', showgrid: true },
+                yaxis: { gridcolor: '#333', showgrid: true },
+                showlegend: false,
+                margin: { t: 20, b: 40, l: 40, r: 20 },
+                height: 250,
+                barmode: 'relative'
+            };
+            
+            Plotly.newPlot('macdChart', traces, layout, { responsive: true });
+        }
+        
+        function renderScoreChart(components) {
+            const labels = ['Technical', 'Sentiment', 'Fundamental'];
+            const scores = [
+                (components.technical?.score || 0),
+                (components.sentiment?.score || 0),
+                (components.fundamental?.score || 0)
+            ];
+            const colors = scores.map(s => s > 0 ? '#00ff88' : (s < 0 ? '#ff4757' : '#ffa502'));
+            
+            const trace = {
+                type: 'bar',
+                x: labels,
+                y: scores,
+                marker: { color: colors },
+                text: scores.map(s => s.toFixed(3)),
+                textposition: 'outside'
+            };
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#888' },
+                xaxis: { gridcolor: '#333' },
+                yaxis: { gridcolor: '#333', range: [-1, 1], showgrid: true },
+                margin: { t: 30, b: 40, l: 40, r: 20 },
+                height: 250
+            };
+            
+            Plotly.newPlot('scoreChart', [trace], layout, { responsive: true });
+        }
+        
+        function renderSentimentChart(sentimentData) {
+            const news = sentimentData?.news_sentiment || {};
+            
+            const trace = {
+                type: 'pie',
+                values: [
+                    news.positive_count || 0,
+                    news.neutral_count || 0,
+                    news.negative_count || 0
+                ],
+                labels: ['Positive', 'Neutral', 'Negative'],
+                marker: {
+                    colors: ['#00ff88', '#ffa502', '#ff4757']
+                },
+                hole: 0.4,
+                textinfo: 'label+percent'
+            };
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                font: { color: '#888' },
+                showlegend: false,
+                margin: { t: 20, b: 20, l: 20, r: 20 },
+                height: 250
+            };
+            
+            Plotly.newPlot('sentimentChart', [trace], layout, { responsive: true });
+        }
+        
+        function renderMetrics(data) {
+            const fundamental = data.fundamental || {};
+            const valuation = fundamental.valuation || {};
+            const growth = fundamental.growth || {};
+            const profitability = fundamental.profitability || {};
+            const health = fundamental.financial_health || {};
+            
+            const metrics = [
+                { label: 'P/E Ratio', value: formatValue(valuation.pe_ratio) },
+                { label: 'PEG Ratio', value: formatValue(valuation.peg_ratio) },
+                { label: 'P/B Ratio', value: formatValue(valuation.pb_ratio) },
+                { label: 'Revenue Growth', value: formatPercent(growth.revenue_growth_yoy) },
+                { label: 'Earnings Growth', value: formatPercent(growth.earnings_growth_yoy) },
+                { label: 'Profit Margin', value: formatPercent(profitability.profit_margin) },
+                { label: 'ROE', value: formatPercent(profitability.roe) },
+                { label: 'Debt/Equity', value: formatValue(health.debt_to_equity) },
+                { label: 'Current Ratio', value: formatValue(health.current_ratio) },
+                { label: 'Free Cash Flow', value: formatLargeNumber(health.free_cash_flow) }
+            ];
+            
+            const container = document.getElementById('metricsGrid');
+            container.innerHTML = metrics.map(m => `
+                <div class="metric-card">
+                    <div class="metric-label">${m.label}</div>
+                    <div class="metric-value">${m.value}</div>
+                </div>
+            `).join('');
+        }
+        
+        function formatValue(val) {
+            if (val === null || val === undefined) return 'N/A';
+            return typeof val === 'number' ? val.toFixed(2) : val;
+        }
+        
+        function formatPercent(val) {
+            if (val === null || val === undefined) return 'N/A';
+            return val.toFixed(1) + '%';
+        }
+        
+        function formatLargeNumber(val) {
+            if (val === null || val === undefined) return 'N/A';
+            if (Math.abs(val) >= 1e9) return (val / 1e9).toFixed(2) + 'B';
+            if (Math.abs(val) >= 1e6) return (val / 1e6).toFixed(2) + 'M';
+            return val.toFixed(0);
+        }
+        
+        function renderSignals(signals) {
+            const bullishContainer = document.getElementById('bullishSignals');
+            const bearishContainer = document.getElementById('bearishSignals');
+            
+            bullishContainer.innerHTML = (signals.bullish || []).map(s => 
+                `<div class="signal-item bullish">${s}</div>`
+            ).join('') || '<p style="color: #888;">No bullish signals</p>';
+            
+            bearishContainer.innerHTML = (signals.bearish || []).map(s => 
+                `<div class="signal-item bearish">${s}</div>`
+            ).join('') || '<p style="color: #888;">No bearish signals</p>';
+        }
+        
+        function renderNews(articles) {
+            const container = document.getElementById('newsContainer');
+            
+            if (!articles || articles.length === 0) {
+                container.innerHTML = '<p style="color: #888;">No recent news available</p>';
+                return;
+            }
+            
+            container.innerHTML = articles.slice(0, 10).map(article => {
+                const sentiment = article.sentiment?.label || 'neutral';
+                return `
+                    <div class="news-item ${sentiment}">
+                        <div class="news-title">${article.title}</div>
+                        <div class="news-meta">
+                            ${article.source} • ${article.published || 'Recent'} • 
+                            Sentiment: ${sentiment} (${(article.sentiment?.compound || 0).toFixed(2)})
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
