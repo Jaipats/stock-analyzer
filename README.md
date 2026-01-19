@@ -32,14 +32,6 @@ A comprehensive stock analysis tool that combines **Technical Analysis**, **Sent
 
 ## Installation
 
-### Quick Install
-
-```bash
-pip install flask yfinance pandas numpy ta vaderSentiment requests beautifulsoup4 feedparser lxml plotly
-```
-
-Or using requirements file:
-
 ```bash
 pip install -r requirements.txt
 ```
@@ -60,7 +52,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install dependencies
-pip install flask yfinance pandas numpy ta vaderSentiment requests beautifulsoup4 feedparser lxml plotly
+pip install -r requirements.txt
 
 # When done, deactivate the virtual environment
 deactivate
@@ -76,7 +68,7 @@ python -m venv venv
 venv\Scripts\activate
 
 # Install dependencies
-pip install flask yfinance pandas numpy ta vaderSentiment requests beautifulsoup4 feedparser lxml plotly
+pip install -r requirements.txt
 
 # When done, deactivate the virtual environment
 deactivate
