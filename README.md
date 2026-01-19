@@ -122,11 +122,13 @@ stock_analyzer/
 
 ## Free Data Sources Used
 
-- **Yahoo Finance** - Historical prices, financials, insider data
-- **Finviz** - News, stock screener data
-- **Google News RSS** - News headlines
-- **StockTwits API** - Social sentiment
-- **SEC EDGAR** - Insider transactions (via yfinance)
+| Source | URL | Data Provided |
+|--------|-----|---------------|
+| **Yahoo Finance** | [finance.yahoo.com](https://finance.yahoo.com) | Historical prices, financials, insider data |
+| **Finviz** | [finviz.com](https://finviz.com) | News, stock screener data |
+| **Google News RSS** | [news.google.com](https://news.google.com) | News headlines |
+| **StockTwits API** | [stocktwits.com](https://stocktwits.com) | Social sentiment |
+| **SEC EDGAR** | [sec.gov/edgar](https://www.sec.gov/edgar) | Insider transactions (via yfinance) |
 
 ## Scoring System
 
