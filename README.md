@@ -148,6 +148,10 @@ The composite score ranges from -1 (Strong Sell) to +1 (Strong Buy):
 - feedparser
 - requests
 
+## Disclaimer
+
+⚠️ **This application is for informational and educational purposes only. It does not constitute financial advice. Always do your own research and consult with a qualified financial advisor before making investment decisions.**
+
 ## License
 
 MIT License
