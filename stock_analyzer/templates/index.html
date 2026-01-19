@@ -275,6 +275,18 @@
             font-weight: 600;
             margin-bottom: 8px;
             color: #fff;
+            text-decoration: none;
+            display: block;
+            transition: color 0.2s;
+        }
+        
+        .news-title:hover {
+            color: #00d4ff;
+            text-decoration: underline;
+        }
+        
+        a.news-title:visited {
+            color: #b388ff;
         }
         
         .news-meta {
@@ -930,9 +942,10 @@
             
             container.innerHTML = articles.slice(0, 10).map(article => {
                 const sentiment = article.sentiment?.label || 'neutral';
+                const link = article.link || '#';
                 return `
                     <div class="news-item ${sentiment}">
-                        <div class="news-title">${article.title}</div>
+                        <a href="${link}" target="_blank" rel="noopener noreferrer" class="news-title">${article.title}</a>
                         <div class="news-meta">
                             ${article.source} • ${article.published || 'Recent'} • 
                             Sentiment: ${sentiment} (${(article.sentiment?.compound || 0).toFixed(2)})
