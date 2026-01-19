@@ -32,8 +32,54 @@ A comprehensive stock analysis tool that combines **Technical Analysis**, **Sent
 
 ## Installation
 
+### Quick Install
+
+```bash
+pip install flask yfinance pandas numpy ta vaderSentiment requests beautifulsoup4 feedparser lxml plotly
+```
+
+Or using requirements file:
+
 ```bash
 pip install -r requirements.txt
+```
+
+> **Note:** Depending on your system configuration, you may need to use `python3` and `pip3` instead of `python` and `pip`.
+
+### Local Development Setup (Recommended)
+
+For local development, it's recommended to use a virtual environment to avoid conflicts with system packages:
+
+#### On macOS/Linux:
+
+```bash
+# Create a virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install flask yfinance pandas numpy ta vaderSentiment requests beautifulsoup4 feedparser lxml plotly
+
+# When done, deactivate the virtual environment
+deactivate
+```
+
+#### On Windows:
+
+```bash
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+venv\Scripts\activate
+
+# Install dependencies
+pip install flask yfinance pandas numpy ta vaderSentiment requests beautifulsoup4 feedparser lxml plotly
+
+# When done, deactivate the virtual environment
+deactivate
 ```
 
 ## Usage
